@@ -1,0 +1,67 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# =========================
+# Jupyter Notebook
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# System Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Environment Variables
+# =========================
+.env
+
+# =========================
+# Model Files (optional)
+# =========================
+# Uncomment if models are large and you don't want to push
+# models/*.pkl
+
+# =========================
+# Data Files (optional)
+# =========================
+# Uncomment if datasets are large
+# data/*.csv
+
+# =========================
+# Streamlit
+# =========================
+.streamlit/secrets.toml
+
+# =========================
+# Temporary Files
+# =========================
+*.tmp
+*.bak
+*.cache
