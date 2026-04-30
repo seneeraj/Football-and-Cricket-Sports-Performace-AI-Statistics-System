@@ -25,29 +25,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ======================
-# 🚀 PREMIUM SIDEBAR
+# SIDEBAR (NO NAVIGATION NOW)
 # ======================
-
 with st.sidebar:
 
-    st.markdown("## ⚙️ Navigation")
-
-    sport_ui = st.radio(
-        "Select Sport",
-        ["⚽ Football (EPL)", "🏏 Cricket (IPL)"],
-        index=0,
-        key="sport_selector"
-    )
-
-    # ✅ FIX: Map emoji label → original values (DO NOT CHANGE LOGIC BELOW)
-    if "Football" in sport:
-        sport = "Football (EPL)"
-    elif "Cricket" in sport:
-        sport = "Cricket (IPL)"
-
-    st.markdown("---")
-
-    # 🎥 GIF / Visual Section
     st.markdown("## 🎬 Insights Zone")
 
     st.image(
@@ -57,7 +38,6 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # 📊 Info Section
     st.markdown("## 📊 About Dashboard")
     st.markdown("""
     - ⚽ Football Analytics  
@@ -68,22 +48,8 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # 👤 Footer
     st.markdown("## 👨‍💻 Developer")
     st.markdown("Built with ❤️ using Streamlit")
-
-# ======================
-# CUSTOM CSS
-# ======================
-st.markdown("""
-<style>
-.title {
-    text-align:center;
-    font-size:34px;
-    font-weight:bold;
-}
-</style>
-""", unsafe_allow_html=True)
 
 # ======================
 # LOAD MODELS
@@ -109,22 +75,20 @@ st.markdown("""
     color: #1f77b4;
     margin-bottom: 10px;
 }
-
-.sub-title {
-    text-align: left;
-    font-size: 30px;
-    font-weight: 700;
-    margin-top: 20px;
-}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-title">⚽🏏 Multi-Sport AI Analytics Dashboard</div>', unsafe_allow_html=True)
 
 # ======================
-# FOOTBALL
+# 🔥 TOP TABS (NEW NAVIGATION)
 # ======================
-if sport == "Football (EPL)":
+tabs = st.tabs(["⚽ Football (EPL)", "🏏 Cricket (IPL)"])
+
+# ======================
+# FOOTBALL TAB
+# ======================
+with tabs[0]:
 
     df = pd.read_csv("data/football_players.csv")
 
@@ -210,9 +174,9 @@ if sport == "Football (EPL)":
     st.line_chart(comp)
 
 # ======================
-# CRICKET
+# CRICKET TAB
 # ======================
-elif sport == "Cricket (IPL)":
+with tabs[1]:
 
     df = pd.read_csv("data/player_stats.csv")
 
