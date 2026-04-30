@@ -161,6 +161,81 @@ elif sport == "Cricket (IPL)":
         pred = model_c.predict(features)[0]
         st.success(f"Predicted Impact Score: {round(pred,2)}")
 
+# ======================
+# FOOTBALL PERCENTILE + RANK
+# ======================
+
+st.subheader("📊 Player Ranking & Percentile")
+
+# Percentile calculation
+goals_pct = (df["goals"] < goals).mean() * 100
+assists_pct = (df["assists"] < assists).mean() * 100
+influence_pct = (df["influence"] < influence).mean() * 100
+
+# Overall percentile (average)
+overall_pct = np.mean([goals_pct, assists_pct, influence_pct])
+
+# Rank based on goals
+rank = df["goals"].rank(ascending=False, method="min")
+player_rank = int(rank[df["name"] == player].values[0])
+total_players = len(df)
+
+# KPI Display
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Overall Percentile", f"{round(overall_pct,1)}%")
+col2.metric("Rank", f"{player_rank} / {total_players}")
+col3.metric("Goals Percentile", f"{round(goals_pct,1)}%")
+
+# Tier Classification
+if overall_pct > 85:
+    st.success("🔥 Elite Player")
+elif overall_pct > 60:
+    st.info("⭐ Good Player")
+else:
+    st.warning("📈 Developing Player")
+
+
+
+    # ======================
+# CRICKET PERCENTILE + RANK
+# ======================
+
+st.subheader("📊 Player Ranking & Percentile")
+
+# Percentile
+runs_pct = (df["batsman_runs"] < runs).mean() * 100
+sr_pct = (df["strike_rate"] < strike_rate).mean() * 100
+wicket_pct = (df["wickets"] < wickets).mean() * 100
+
+overall_pct = np.mean([runs_pct, sr_pct, wicket_pct])
+
+# Rank based on runs
+rank = df["batsman_runs"].rank(ascending=False, method="min")
+player_rank = int(rank[df["batsman"] == player].values[0])
+total_players = len(df)
+
+# KPI display
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Overall Percentile", f"{round(overall_pct,1)}%")
+col2.metric("Rank", f"{player_rank} / {total_players}")
+col3.metric("Runs Percentile", f"{round(runs_pct,1)}%")
+
+# Tier classification
+if overall_pct > 85:
+    st.success("🔥 Elite Player")
+elif overall_pct > 60:
+    st.info("⭐ Good Player")
+else:
+    st.warning("📈 Developing Player")
+
+    
+
+
+
+    
+
     # ======================
     # VISUALS
     # ======================
