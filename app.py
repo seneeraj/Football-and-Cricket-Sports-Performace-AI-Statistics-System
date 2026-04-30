@@ -82,8 +82,19 @@ if sport == "Football (EPL)":
 
     if st.button("🔮 Predict Football Score"):
 
-        features = np.array([[goals, assists, minutes, influence, creativity,
-                              threat, ict, form, bps, clean, conceded]])
+        features = np.array([[ 
+    goals,
+    assists,
+    minutes,
+    influence,
+    creativity,
+    threat,
+    ict,
+    form,
+    bps,
+    clean,
+    conceded
+]])
 
         prediction = model_f.predict(features)[0]
 
