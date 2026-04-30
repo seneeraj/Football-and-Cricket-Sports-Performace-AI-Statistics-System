@@ -43,7 +43,7 @@ with st.sidebar:
     st.markdown("## 🎬 Insights Zone")
 
     st.image(
-        "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif",
+       "https://giphy.com/gifs/VriendenLoterij-9qEzY9Q8Y7qqx24RpE",
         use_container_width=True
     )
 
