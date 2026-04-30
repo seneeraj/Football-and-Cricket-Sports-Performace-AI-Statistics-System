@@ -3,28 +3,21 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
+import matplotlib.pyplot as plt
 
 # ======================
 # PAGE CONFIG
 # ======================
-st.set_page_config(
-    page_title="Multi-Sport AI Dashboard",
-    layout="wide",
-    page_icon="⚽"
-)
+st.set_page_config(page_title="Multi-Sport AI Dashboard", layout="wide")
 
 # ======================
-# LOAD MODEL SAFELY
+# LOAD MODEL
 # ======================
 def load_model(path):
     if not os.path.exists(path):
-        st.error(f"❌ Model not found: {path}")
+        st.error(f"Model not found: {path}")
         return None
-    try:
-        return pickle.load(open(path, "rb"))
-    except Exception as e:
-        st.error(f"❌ Error loading model: {e}")
-        return None
+    return pickle.load(open(path, "rb"))
 
 model_f = load_model("models/football_model.pkl")
 model_c = load_model("models/cricket_model.pkl")
@@ -32,159 +25,178 @@ model_c = load_model("models/cricket_model.pkl")
 # ======================
 # HEADER
 # ======================
-st.markdown("""
-<h1 style='text-align:center; color:#2E86C1;'>
-⚽🏏 Multi-Sport AI Performance Dashboard
-</h1>
-""", unsafe_allow_html=True)
-
+st.title("⚽🏏 Multi-Sport AI Analytics Dashboard")
 st.markdown("---")
 
-# ======================
-# SIDEBAR
-# ======================
-sport = st.sidebar.selectbox(
-    "Select Sport",
-    ["Football (EPL)", "Cricket (IPL)"]
-)
+sport = st.sidebar.selectbox("Select Sport", ["Football (EPL)", "Cricket (IPL)"])
 
 # ======================
-# ⚽ FOOTBALL SECTION
+# RADAR CHART FUNCTION
+# ======================
+def radar_chart(player_vals, avg_vals, labels):
+    angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False)
+    player_vals = np.append(player_vals, player_vals[0])
+    avg_vals = np.append(avg_vals, avg_vals[0])
+    angles = np.append(angles, angles[0])
+
+    fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
+    ax.plot(angles, player_vals, label="Player")
+    ax.fill(angles, player_vals, alpha=0.3)
+    ax.plot(angles, avg_vals, label="Average")
+    ax.legend(loc="upper right")
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+
+    return fig
+
+# ======================
+# FOOTBALL SECTION
 # ======================
 if sport == "Football (EPL)":
 
-    st.subheader("⚽ Football Player Performance")
+    st.header("⚽ Football Analytics")
 
-    if model_f is not None:
+    file_path = "data/football_players.csv"
 
-        file_path = "data/football_players.csv"
+    if os.path.exists(file_path):
+        df = pd.read_csv(file_path)
 
-        if os.path.exists(file_path):
+        player = st.selectbox("Select Player", df["name"])
+        row = df[df["name"] == player].iloc[0]
 
-            df_players = pd.read_csv(file_path)
+        goals = row["goals"]
+        assists = row["assists"]
+        minutes = row["minutes"]
+        influence = row["influence"]
+        creativity = row["creativity"]
+        threat = row["threat"]
+        ict = row["ict"]
+        form = row["form"]
+        bps = row["bps"]
+        clean = row["clean"]
+        conceded = row["conceded"]
 
-            player = st.selectbox("Select Player", df_players["name"])
+    else:
+        st.warning("Football dataset not found")
+        st.stop()
 
-            player_data = df_players[df_players["name"] == player].iloc[0]
+    # Prediction
+    if st.button("Predict Football Score"):
+        features = np.array([[goals, assists, minutes, influence, creativity,
+                              threat, ict, form, bps, clean, conceded]])
 
-            goals = int(player_data["goals"])
-            assists = int(player_data["assists"])
-            minutes = int(player_data["minutes"])
-            influence = float(player_data["influence"])
-            creativity = float(player_data["creativity"])
-            threat = float(player_data["threat"])
-            ict = float(player_data["ict"])
-            form = float(player_data["form"])
-            bps = int(player_data["bps"])
-            clean = int(player_data["clean"])
-            conceded = int(player_data["conceded"])
+        pred = model_f.predict(features)[0]
+        st.success(f"Predicted Score: {round(pred,2)}")
 
-            st.success(f"Loaded stats for {player}")
+    # ======================
+    # VISUALS
+    # ======================
 
-        else:
-            st.warning("football_players.csv not found → using manual input")
+    avg = df.mean(numeric_only=True)
 
-            goals = st.number_input("Goals", 0, 50, value=5)
-            assists = st.number_input("Assists", 0, 30, value=3)
-            minutes = st.number_input("Minutes", 0, 4000, value=1500)
-            influence = st.number_input("Influence", 0.0, 1000.0, value=300.0)
-            creativity = st.number_input("Creativity", 0.0, 1000.0, value=250.0)
-            threat = st.number_input("Threat", 0.0, 1000.0, value=280.0)
-            ict = st.number_input("ICT Index", 0.0, 1000.0, value=300.0)
-            form = st.number_input("Form", 0.0, 20.0, value=5.0)
-            bps = st.number_input("BPS", 0, 1000, value=200)
-            clean = st.number_input("Clean Sheets", 0, 50, value=5)
-            conceded = st.number_input("Goals Conceded", 0, 100, value=10)
+    st.subheader("📊 Player vs Average")
+    comp_df = pd.DataFrame({
+        "Player": [goals, assists, influence, creativity, threat],
+        "Average": [
+            avg["goals"], avg["assists"],
+            avg["influence"], avg["creativity"], avg["threat"]
+        ]
+    }, index=["Goals","Assists","Influence","Creativity","Threat"])
 
-        if st.button("Predict Football Score"):
+    st.bar_chart(comp_df)
 
-            try:
-                features = np.array([[
-                    goals, assists, minutes, influence, creativity,
-                    threat, ict, form, bps, clean, conceded
-                ]], dtype=float)
+    # Radar
+    st.subheader("🕸️ Radar Chart")
+    labels = ["Goals","Assists","Influence","Creativity","Threat"]
 
-                prediction = model_f.predict(features)[0]
+    player_vals = np.array([
+        goals, assists, influence, creativity, threat
+    ])
+    avg_vals = np.array([
+        avg["goals"], avg["assists"],
+        avg["influence"], avg["creativity"], avg["threat"]
+    ])
 
-                st.success(f"🎯 Predicted Score: {round(prediction, 2)}")
+    st.pyplot(radar_chart(player_vals, avg_vals, labels))
 
-                st.subheader("📊 Feature Importance")
+    # Leaderboard
+    st.subheader("🏆 Top Players")
+    st.dataframe(df.sort_values("goals", ascending=False).head(10))
 
-                df_feat = pd.DataFrame({
-                    "Feature": [
-                        "Goals", "Assists", "Minutes", "Influence",
-                        "Creativity", "Threat", "ICT", "Form",
-                        "BPS", "Clean Sheets", "Conceded"
-                    ],
-                    "Importance": model_f.coef_
-                })
-
-                st.bar_chart(df_feat.set_index("Feature"))
-
-            except Exception as e:
-                st.error(f"Error: {e}")
+    # Distribution
+    st.subheader("📈 Goals Distribution")
+    fig, ax = plt.subplots()
+    ax.hist(df["goals"], bins=20)
+    ax.axvline(goals)
+    st.pyplot(fig)
 
 # ======================
-# 🏏 CRICKET SECTION
+# CRICKET SECTION
 # ======================
 elif sport == "Cricket (IPL)":
 
-    st.subheader("🏏 Cricket Player Performance")
+    st.header("🏏 Cricket Analytics")
 
-    if model_c is not None:
+    file_path = "data/player_stats.csv"
 
-        file_path = "data/player_stats.csv"
+    if os.path.exists(file_path):
+        df = pd.read_csv(file_path)
 
-        if os.path.exists(file_path):
+        player = st.selectbox("Select Player", df["batsman"])
+        row = df[df["batsman"] == player].iloc[0]
 
-            df_players = pd.read_csv(file_path)
+        runs = row["batsman_runs"]
+        strike_rate = row["strike_rate"]
+        wickets = row["wickets"]
+        fours = row["is_four"]
+        sixes = row["is_six"]
 
-            player = st.selectbox("Select Player", df_players["batsman"])
+    else:
+        st.warning("Cricket dataset not found")
+        st.stop()
 
-            player_data = df_players[df_players["batsman"] == player].iloc[0]
+    # Prediction
+    if st.button("Predict Cricket Impact"):
+        features = np.array([[runs, strike_rate, wickets, fours, sixes]])
+        pred = model_c.predict(features)[0]
+        st.success(f"Predicted Impact Score: {round(pred,2)}")
 
-            runs = float(player_data["batsman_runs"])
-            strike_rate = float(player_data["strike_rate"])
-            wickets = float(player_data["wickets"])
-            fours = float(player_data["is_four"])
-            sixes = float(player_data["is_six"])
+    # ======================
+    # VISUALS
+    # ======================
 
-            st.success(f"Loaded stats for {player}")
+    avg = df.mean(numeric_only=True)
 
-        else:
-            st.warning("player_stats.csv not found → using manual input")
+    st.subheader("📊 Player vs Average")
+    comp_df = pd.DataFrame({
+        "Player": [runs, strike_rate, wickets, fours, sixes],
+        "Average": [
+            avg["batsman_runs"], avg["strike_rate"],
+            avg["wickets"], avg["is_four"], avg["is_six"]
+        ]
+    }, index=["Runs","Strike Rate","Wickets","Fours","Sixes"])
 
-            runs = st.number_input("Runs", 0, 5000, value=500)
-            strike_rate = st.number_input("Strike Rate", 0.0, 300.0, value=130.0)
-            wickets = st.number_input("Wickets", 0, 500, value=20)
-            fours = st.number_input("Fours", 0, 500, value=40)
-            sixes = st.number_input("Sixes", 0, 300, value=20)
+    st.bar_chart(comp_df)
 
-        if st.button("Predict Cricket Impact"):
+    # Radar
+    st.subheader("🕸️ Radar Chart")
+    labels = ["Runs","Strike Rate","Wickets","Fours","Sixes"]
 
-            try:
-                features = np.array([[
-                    runs, strike_rate, wickets, fours, sixes
-                ]], dtype=float)
+    player_vals = np.array([runs, strike_rate, wickets, fours, sixes])
+    avg_vals = np.array([
+        avg["batsman_runs"], avg["strike_rate"],
+        avg["wickets"], avg["is_four"], avg["is_six"]
+    ])
 
-                prediction = model_c.predict(features)[0]
+    st.pyplot(radar_chart(player_vals, avg_vals, labels))
 
-                st.success(f"🏏 Predicted Impact Score: {round(prediction, 2)}")
+    # Leaderboard
+    st.subheader("🏆 Top Players")
+    st.dataframe(df.sort_values("batsman_runs", ascending=False).head(10))
 
-                st.subheader("📊 Feature Importance")
-
-                df_feat = pd.DataFrame({
-                    "Feature": ["Runs", "Strike Rate", "Wickets", "Fours", "Sixes"],
-                    "Importance": model_c.coef_
-                })
-
-                st.bar_chart(df_feat.set_index("Feature"))
-
-            except Exception as e:
-                st.error(f"Error: {e}")
-
-# ======================
-# FOOTER
-# ======================
-st.markdown("---")
-st.markdown("🚀 Built with Streamlit | Multi-Sport AI Analytics System")
+    # Distribution
+    st.subheader("📈 Runs Distribution")
+    fig, ax = plt.subplots()
+    ax.hist(df["batsman_runs"], bins=20)
+    ax.axvline(runs)
+    st.pyplot(fig)
