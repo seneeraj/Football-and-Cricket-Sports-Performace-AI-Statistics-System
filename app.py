@@ -43,7 +43,7 @@ with st.sidebar:
     st.markdown("## 🎬 Insights Zone")
 
     st.image(
-       "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif",
+       "https://assets.sportsboom.com/England_bowler_Joe_Root_bowls_to_batsman_Mohammed_Siraj_3c07c8dad8.jpg",
         use_container_width=True
     )
 
