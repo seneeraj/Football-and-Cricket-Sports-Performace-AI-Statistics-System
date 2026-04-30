@@ -2,6 +2,7 @@ import streamlit as st
 import pickle
 import numpy as np
 import pandas as pd
+import os
 
 # ======================
 # PAGE CONFIG
@@ -13,18 +14,28 @@ st.set_page_config(
 )
 
 # ======================
-# LOAD MODELS
+# SAFE MODEL LOADING
 # ======================
-model_f = pickle.load(open("models/football_model.pkl", "rb"))
-model_c = pickle.load(open("models/cricket_model.pkl", "rb"))
+def load_model(path):
+    if not os.path.exists(path):
+        st.error(f"❌ Model not found: {path}")
+        return None
+    try:
+        return pickle.load(open(path, "rb"))
+    except Exception as e:
+        st.error(f"❌ Error loading model: {e}")
+        return None
+
+model_f = load_model("models/football_model.pkl")
+model_c = load_model("models/cricket_model.pkl")
 
 # ======================
 # HEADER
 # ======================
 st.markdown("""
-    <h1 style='text-align: center; color: #2E86C1;'>
-    ⚽🏏 Multi-Sport AI Performance Dashboard
-    </h1>
+<h1 style='text-align:center; color:#2E86C1;'>
+⚽🏏 Multi-Sport AI Performance Dashboard
+</h1>
 """, unsafe_allow_html=True)
 
 st.markdown("---")
@@ -40,127 +51,122 @@ sport = st.sidebar.selectbox(
 # ======================
 # KPI CARD FUNCTION
 # ======================
-def kpi_card(title, value):
-    st.markdown(f"""
-        <div style="
-            padding:15px;
-            border-radius:10px;
-            background-color:#1E1E1E;
-            text-align:center;
-            color:white;">
-            <h4>{title}</h4>
-            <h2>{value}</h2>
-        </div>
-    """, unsafe_allow_html=True)
+def kpi(title, value):
+    st.metric(label=title, value=value)
 
 # ======================
-# ⚽ FOOTBALL DASHBOARD
+# ⚽ FOOTBALL SECTION
 # ======================
 if sport == "Football (EPL)":
 
-    st.subheader("⚽ Football Player Performance")
+    st.subheader("⚽ Football Player Performance Predictor")
 
-    col1, col2, col3, col4 = st.columns(4)
+    if model_f is not None:
 
-    goals = col1.number_input("Goals", 0, 50)
-    assists = col2.number_input("Assists", 0, 30)
-    minutes = col3.number_input("Minutes", 0, 4000)
-    form = col4.number_input("Form", 0.0, 20.0)
+        col1, col2, col3 = st.columns(3)
 
-    col5, col6, col7, col8 = st.columns(4)
+        with col1:
+            goals = st.number_input("Goals", 0, 50)
+            assists = st.number_input("Assists", 0, 30)
+            minutes = st.number_input("Minutes", 0, 4000)
 
-    influence = col5.number_input("Influence", 0.0, 1000.0)
-    creativity = col6.number_input("Creativity", 0.0, 1000.0)
-    threat = col7.number_input("Threat", 0.0, 1000.0)
-    ict = col8.number_input("ICT Index", 0.0, 1000.0)
+        with col2:
+            influence = st.number_input("Influence", 0.0, 1000.0)
+            creativity = st.number_input("Creativity", 0.0, 1000.0)
+            threat = st.number_input("Threat", 0.0, 1000.0)
 
-    col9, col10 = st.columns(2)
+        with col3:
+            ict = st.number_input("ICT Index", 0.0, 1000.0)
+            form = st.number_input("Form", 0.0, 20.0)
+            bps = st.number_input("BPS", 0, 1000)
+            clean = st.number_input("Clean Sheets", 0, 50)
+            conceded = st.number_input("Goals Conceded", 0, 100)
 
-    bps = col9.number_input("BPS", 0, 1000)
-    clean = col10.number_input("Clean Sheets", 0, 50)
-    conceded = st.number_input("Goals Conceded", 0, 100)
+        if st.button("Predict Football Score"):
 
-    if st.button("🔮 Predict Football Score"):
+            try:
+                features = np.array([[
+                    goals,
+                    assists,
+                    minutes,
+                    influence,
+                    creativity,
+                    threat,
+                    ict,
+                    form,
+                    bps,
+                    clean,
+                    conceded
+                ]], dtype=float)
 
-        features = np.array([[ 
-    goals,
-    assists,
-    minutes,
-    influence,
-    creativity,
-    threat,
-    ict,
-    form,
-    bps,
-    clean,
-    conceded
-]])
+                prediction = model_f.predict(features)[0]
 
-        prediction = model_f.predict(features)[0]
+                st.success(f"🎯 Predicted Score: {round(prediction, 2)}")
 
-        st.markdown("### 📊 Prediction Result")
+                # Feature importance
+                st.subheader("📊 Feature Importance")
 
-        k1, k2, k3 = st.columns(3)
-        k1.metric("Predicted Score", round(prediction, 2))
-        k2.metric("Goals", goals)
-        k3.metric("Assists", assists)
+                df_feat = pd.DataFrame({
+                    "Feature": [
+                        "Goals", "Assists", "Minutes", "Influence",
+                        "Creativity", "Threat", "ICT", "Form",
+                        "BPS", "Clean Sheets", "Conceded"
+                    ],
+                    "Importance": model_f.coef_
+                })
 
-        st.markdown("---")
+                st.bar_chart(df_feat.set_index("Feature"))
 
-        st.subheader("📈 Feature Importance")
-
-        df_feat = pd.DataFrame({
-            "Feature": [
-                "Goals", "Assists", "Minutes", "Influence",
-                "Creativity", "Threat", "ICT", "Form",
-                "BPS", "Clean Sheets", "Conceded"
-            ],
-            "Importance": model_f.coef_
-        })
-
-        st.bar_chart(df_feat.set_index("Feature"))
+            except Exception as e:
+                st.error(f"Error in prediction: {e}")
 
 # ======================
-# 🏏 CRICKET DASHBOARD
+# 🏏 CRICKET SECTION
 # ======================
 elif sport == "Cricket (IPL)":
 
-    st.subheader("🏏 Cricket Player Performance")
+    st.subheader("🏏 Cricket Player Performance Predictor")
 
-    col1, col2, col3 = st.columns(3)
+    if model_c is not None:
 
-    runs = col1.number_input("Runs", 0, 5000)
-    strike_rate = col2.number_input("Strike Rate", 0.0, 300.0)
-    wickets = col3.number_input("Wickets", 0, 500)
+        col1, col2 = st.columns(2)
 
-    col4, col5 = st.columns(2)
+        with col1:
+            runs = st.number_input("Runs", 0, 5000)
+            strike_rate = st.number_input("Strike Rate", 0.0, 300.0)
 
-    fours = col4.number_input("Fours", 0, 500)
-    sixes = col5.number_input("Sixes", 0, 300)
+        with col2:
+            wickets = st.number_input("Wickets", 0, 500)
+            fours = st.number_input("Fours", 0, 500)
+            sixes = st.number_input("Sixes", 0, 300)
 
-    if st.button("🔮 Predict Cricket Impact"):
+        if st.button("Predict Cricket Impact"):
 
-        features = np.array([[runs, strike_rate, wickets, fours, sixes]])
+            try:
+                features = np.array([[
+                    runs,
+                    strike_rate,
+                    wickets,
+                    fours,
+                    sixes
+                ]], dtype=float)
 
-        prediction = model_c.predict(features)[0]
+                prediction = model_c.predict(features)[0]
 
-        st.markdown("### 📊 Prediction Result")
+                st.success(f"🏏 Predicted Impact Score: {round(prediction, 2)}")
 
-        k1, k2, k3 = st.columns(3)
-        k1.metric("Impact Score", round(prediction, 2))
-        k2.metric("Runs", runs)
-        k3.metric("Wickets", wickets)
+                # Feature importance
+                st.subheader("📊 Feature Importance")
 
-        st.markdown("---")
+                df_feat = pd.DataFrame({
+                    "Feature": ["Runs", "Strike Rate", "Wickets", "Fours", "Sixes"],
+                    "Importance": model_c.coef_
+                })
 
-        st.subheader("📈 Feature Importance")
+                st.bar_chart(df_feat.set_index("Feature"))
 
-        df_feat = pd.DataFrame({
-            "Feature": ["Runs", "Strike Rate", "Wickets", "Fours", "Sixes"],
-            "Importance": model_c.coef_
-        })
-
-        st.bar_chart(df_feat.set_index("Feature"))
+            except Exception as e:
+                st.error(f"Error in prediction: {e}")
 
 # ======================
 # 📂 DATA EXPLORER
@@ -168,13 +174,17 @@ elif sport == "Cricket (IPL)":
 st.sidebar.markdown("---")
 st.sidebar.subheader("📂 Upload Dataset")
 
-file = st.sidebar.file_uploader("Upload CSV")
+uploaded = st.sidebar.file_uploader("Upload CSV")
 
-if file:
-    df = pd.read_csv(file)
+if uploaded:
+    try:
+        df = pd.read_csv(uploaded)
 
-    st.subheader("📊 Dataset Preview")
-    st.dataframe(df.head())
+        st.subheader("📊 Dataset Preview")
+        st.dataframe(df.head())
 
-    st.subheader("📈 Correlation Matrix")
-    st.dataframe(df.corr())
+        st.subheader("📈 Correlation Matrix")
+        st.dataframe(df.corr(numeric_only=True))
+
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
