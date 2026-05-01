@@ -89,7 +89,9 @@ tabs = st.tabs(["⚽ Football (EPL)", "🏏 Cricket (IPL)"])
 # FOOTBALL TAB
 # ======================
 with tabs[0]:
+    st.image("https://wallpapercave.com/wp/wp7624224.jpg", use_container_width=True)
 
+    st.header("⚽ Football Analytics")
     df = pd.read_csv("data/football_players.csv")
 
     df.rename(columns={
