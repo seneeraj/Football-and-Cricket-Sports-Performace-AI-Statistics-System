@@ -32,7 +32,7 @@ with st.sidebar:
     st.markdown("## 🎬 Insights Zone")
 
     st.image(
-        "https://assets.sportsboom.com/England_bowler_Joe_Root_bowls_to_batsman_Mohammed_Siraj_3c07c8dad8.jpg",
+        "https://onecricketnews.akamaized.net/parth-editor/oc-dashboard/news-images-prod/1709034035132_ipl%202024.jpeg",
         use_container_width=True
     )
 
